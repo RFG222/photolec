@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Лектор (Gemini)</title>
+    <title>AI Конспект (Исправленный)</title>
     <script type="importmap">
       {
         "imports": {
@@ -12,106 +12,124 @@
       }
     </script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f0f2f5; color: #333; }
-        h2 { text-align: center; color: #4285f4; }
-        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f0f2f5; color: #333; }
+        h2 { text-align: center; color: #4285f4; margin-bottom: 20px;}
+        .container { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         
-        /* Красивая кнопка загрузки */
         .file-upload {
-            border: 2px dashed #4285f4; padding: 20px; text-align: center; cursor: pointer;
-            border-radius: 10px; background: #e8f0fe; color: #4285f4; font-weight: bold;
-            display: block; margin-bottom: 20px; transition: 0.3s;
+            border: 2px dashed #4285f4; padding: 25px; text-align: center; cursor: pointer;
+            border-radius: 12px; background: #e8f0fe; color: #4285f4; font-weight: 600;
+            display: block; margin-bottom: 20px; transition: all 0.2s;
         }
-        .file-upload:hover { background: #d2e3fc; }
+        .file-upload:active { transform: scale(0.98); }
         input[type="file"] { display: none; }
 
-        /* Поле результата */
         #result-area {
-            width: 100%; min-height: 200px; padding: 15px; border: 1px solid #ddd;
-            border-radius: 10px; font-size: 16px; line-height: 1.6; background: #fafafa;
-            margin-bottom: 15px; white-space: pre-wrap; /* Сохраняет отступы */
+            width: 100%; min-height: 200px; padding: 15px; border: 1px solid #e1e4e8;
+            border-radius: 12px; font-size: 16px; line-height: 1.6; background: #fafafa;
+            margin-bottom: 15px; white-space: pre-wrap; outline: none;
         }
+        #result-area:focus { border-color: #4285f4; background: #fff; }
 
         button.save-btn {
-            background: #34a853; color: white; border: none; padding: 15px; width: 100%;
-            border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer;
+            background: #34a853; color: white; border: none; padding: 16px; width: 100%;
+            border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: background 0.2s;
         }
         button.save-btn:hover { background: #2e8b46; }
 
-        img#preview { max-width: 100%; border-radius: 10px; margin-bottom: 15px; display: none; }
-        #loader { text-align: center; display: none; font-weight: bold; color: #555; }
+        img#preview { max-width: 100%; border-radius: 12px; margin-bottom: 20px; display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        #loader { text-align: center; display: none; font-weight: bold; color: #555; margin: 15px 0; }
+        
+        .error { color: #d93025; background: #fce8e6; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none;}
     </style>
 </head>
 <body>
 
-    <h2>✨ AI Конспект</h2>
+    <h2>📝 Умный Конспект</h2>
     
     <div class="container">
         <label for="fileInput" class="file-upload">
-            📸 Сфотографировать слайд
+            📸 Сфоткать слайд
         </label>
         <input type="file" id="fileInput" accept="image/*" capture="environment">
 
         <img id="preview" src="">
         
-        <div id="loader">🤖 Нейросеть думает... (5-10 сек)</div>
+        <div id="loader">⚡ Обрабатываю фото...</div>
+        <div id="error-msg" class="error"></div>
         
-        <div id="result-area" contenteditable="true">Здесь появится расшифрованный текст...</div>
+        <div id="result-area" contenteditable="true">Текст появится здесь...</div>
 
-        <button class="save-btn" onclick="saveDoc()">📥 Скачать в Word</button>
+        <button class="save-btn" onclick="saveDoc()">💾 Скачать Word</button>
     </div>
 
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        // !!! ВСТАВЬ СЮДА КЛЮЧ !!!
+        // ==========================================
+        // 👇 ВСТАВЬ СЮДА СВОЙ КЛЮЧ
         const API_KEY = "AIzaSyB1O8MLw6IVmsZlpVbKwhvJP8trLwY2zwM"; 
-        // !!!!!!!!!!!!!!!!!!!!!!!!
+        // 👆 Например: "AIzaSyD..."
+        // ==========================================
 
         const genAI = new GoogleGenerativeAI(API_KEY);
+        
+        // Используем самую новую доступную модель
+        // Если снова будет ошибка 404, попробуй поменять на "gemini-2.0-flash"
+        const MODEL_NAME = "gemini-1.5-flash-latest"; 
+
         const fileInput = document.getElementById('fileInput');
         const resultArea = document.getElementById('result-area');
         const loader = document.getElementById('loader');
         const preview = document.getElementById('preview');
+        const errorMsg = document.getElementById('error-msg');
 
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Показываем картинку
+            // Сброс интерфейса
             preview.src = URL.createObjectURL(file);
             preview.style.display = 'block';
             loader.style.display = 'block';
-            resultArea.innerText = "";
+            errorMsg.style.display = 'none';
+            resultArea.innerText = "⏳ Думаю...";
+            resultArea.style.opacity = "0.5";
 
             try {
-                // Конвертируем картинку для отправки
                 const base64Data = await fileToGenerativePart(file);
-                
-                // Выбираем модель (Flash - быстрая и дешевая/бесплатная)
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
-                // Промпт - инструкция для нейросети
-                const prompt = "Ты - помощник студента. Посмотри на это фото (слайд лекции или доска). " +
-                               "1. Распознай весь текст. " +
-                               "2. Если текст плохо виден, восстанови его по смыслу. " +
-                               "3. Исправь грамматические ошибки. " +
-                               "4. Оформи красиво: используй заголовки, списки, выдели важные термины. " +
-                               "Верни только готовый текст конспекта.";
+                const prompt = `Ты - помощник студента. Твоя задача - транскрибировать текст с этого изображения.
+                1. Если это слайд презентации, выпиши заголовок и основные пункты.
+                2. Если текст обрезан или плохо виден, восстанови его по смыслу.
+                3. Исправь опечатки.
+                4. Не пиши вступительных слов вроде "Вот текст", просто дай чистый конспект.`;
 
                 const result = await model.generateContent([prompt, base64Data]);
                 const response = await result.response;
                 const text = response.text();
 
-                resultArea.innerText = text; // Вставляем результат
+                resultArea.innerText = text;
+                resultArea.style.opacity = "1";
             } catch (error) {
-                resultArea.innerText = "Ошибка: " + error.message;
+                console.error(error);
+                let msg = error.message;
+                
+                // Простая расшифровка популярных ошибок для тебя
+                if (msg.includes("404")) msg = "Ошибка 404: Модель не найдена. Попробуй заменить в коде MODEL_NAME на 'gemini-pro'.";
+                if (msg.includes("403") || msg.includes("Key")) msg = "Ошибка ключа: Проверь, правильно ли ты вставил API Key.";
+                if (msg.includes("Failed to fetch")) msg = "Нет интернета или нужен VPN (если ты в РФ).";
+
+                errorMsg.innerText = "❌ " + msg;
+                errorMsg.style.display = 'block';
+                resultArea.innerText = "";
             } finally {
                 loader.style.display = 'none';
             }
         });
 
-        // Функция превращения файла в формат для AI
         async function fileToGenerativePart(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -122,14 +140,13 @@
             });
         }
 
-        // Скачивание (сделал глобальной функцией для доступа из HTML)
         window.saveDoc = function() {
             const text = document.getElementById('result-area').innerText;
             const blob = new Blob(['\ufeff' + text], { type: 'application/msword' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'AI_Lecture.doc';
+            a.download = `Lecture_${new Date().toLocaleTimeString().replace(/:/g,'-')}.doc`;
             a.click();
         }
     </script>
