@@ -3,113 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Лектор-Скан</title>
-    <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
+    <title>AI Лектор (Gemini)</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f4f4f9; }
-        h2 { text-align: center; color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f0f2f5; color: #333; }
+        h2 { text-align: center; color: #4285f4; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         
-        .control-panel { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        
-        /* Кнопка камеры */
+        /* Красивая кнопка загрузки */
+        .file-upload {
+            border: 2px dashed #4285f4; padding: 20px; text-align: center; cursor: pointer;
+            border-radius: 10px; background: #e8f0fe; color: #4285f4; font-weight: bold;
+            display: block; margin-bottom: 20px; transition: 0.3s;
+        }
+        .file-upload:hover { background: #d2e3fc; }
         input[type="file"] { display: none; }
-        .custom-file-upload {
-            border: 2px dashed #ccc; display: block; padding: 15px;
-            text-align: center; cursor: pointer; border-radius: 8px; font-weight: bold; color: #555; margin-bottom: 15px;
-        }
-        .custom-file-upload:active { background: #e1e1e1; }
 
-        /* Поле с текстом */
-        textarea {
-            width: 100%; height: 300px; padding: 10px; border: 1px solid #ccc;
-            border-radius: 8px; font-size: 16px; line-height: 1.5; margin-bottom: 15px;
-            box-sizing: border-box; /* Чтобы padding не ломал ширину */
+        /* Поле результата */
+        #result-area {
+            width: 100%; min-height: 200px; padding: 15px; border: 1px solid #ddd;
+            border-radius: 10px; font-size: 16px; line-height: 1.6; background: #fafafa;
+            margin-bottom: 15px; white-space: pre-wrap; /* Сохраняет отступы */
         }
 
-        /* Кнопка скачивания */
-        .btn-download {
-            background-color: #007bff; color: white; border: none; padding: 15px;
-            width: 100%; border-radius: 8px; font-size: 16px; cursor: pointer;
+        button.save-btn {
+            background: #34a853; color: white; border: none; padding: 15px; width: 100%;
+            border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer;
         }
-        .btn-download:hover { background-color: #0056b3; }
+        button.save-btn:hover { background: #2e8b46; }
 
-        /* Индикатор загрузки */
-        #status { text-align: center; margin-bottom: 10px; font-weight: bold; color: #d9534f; min-height: 20px;}
-        img { max-width: 100%; margin-bottom: 15px; border-radius: 8px; display: none; }
+        img#preview { max-width: 100%; border-radius: 10px; margin-bottom: 15px; display: none; }
+        #loader { text-align: center; display: none; font-weight: bold; color: #555; }
     </style>
 </head>
 <body>
 
-    <h2>📸 Лектор-Скан</h2>
-
-    <div class="control-panel">
-        <label for="file-upload" class="custom-file-upload">
-            📷 Сделать фото / Выбрать слайд
+    <h2>✨ AI Конспект</h2>
+    
+    <div class="container">
+        <label for="fileInput" class="file-upload">
+            📸 Сфотографировать слайд
         </label>
-        <input id="file-upload" type="file" accept="image/*" capture="environment">
+        <input type="file" id="fileInput" accept="image/*" capture="environment">
 
-        <img id="preview" src="" alt="Preview">
+        <img id="preview" src="">
+        
+        <div id="loader">🤖 Нейросеть думает... (5-10 сек)</div>
+        
+        <div id="result-area" contenteditable="true">Здесь появится расшифрованный текст...</div>
 
-        <div id="status"></div>
-
-        <textarea id="result-text" placeholder="Здесь появится текст. Ты сможешь его исправить..."></textarea>
-
-        <button class="btn-download" onclick="downloadWord()">💾 Скачать в Word</button>
+        <button class="save-btn" onclick="saveDoc()">📥 Скачать в Word</button>
     </div>
 
-    <script>
-        const fileInput = document.getElementById('file-upload');
-        const status = document.getElementById('status');
-        const textArea = document.getElementById('result-text');
+    <script type="module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+
+        // !!! ВСТАВЬ СЮДА КЛЮЧ !!!
+        const API_KEY = "AIzaSyB1O8MLw6IVmsZlpVbKwhvJP8trLwY2zwM"; 
+        // !!!!!!!!!!!!!!!!!!!!!!!!
+
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const fileInput = document.getElementById('fileInput');
+        const resultArea = document.getElementById('result-area');
+        const loader = document.getElementById('loader');
         const preview = document.getElementById('preview');
 
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            // 1. Показываем картинку
+            // Показываем картинку
             preview.src = URL.createObjectURL(file);
             preview.style.display = 'block';
-            
-            // 2. Говорим пользователю ждать
-            status.innerText = "⏳ Распознаю текст... Подожди 5-10 сек...";
-            
-            // 3. Запускаем Tesseract (OCR)
-            // 'rus+eng' значит искать и русский и английский текст
-            Tesseract.recognize(
-                file,
-                'rus+eng', 
-                { logger: m => console.log(m) }
-            ).then(({ data: { text } }) => {
-                // 4. Когда готово - вставляем текст
-                status.innerText = "✅ Готово! Проверь ошибки.";
-                // Добавляем новый текст к старому (если фоткаем несколько слайдов подряд)
-                textArea.value += text + "\n\n--- СЛЕДУЮЩИЙ СЛАЙД ---\n\n";
-            }).catch(err => {
-                status.innerText = "❌ Ошибка: " + err;
-            });
+            loader.style.display = 'block';
+            resultArea.innerText = "";
+
+            try {
+                // Конвертируем картинку для отправки
+                const base64Data = await fileToGenerativePart(file);
+                
+                // Выбираем модель (Flash - быстрая и дешевая/бесплатная)
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+                // Промпт - инструкция для нейросети
+                const prompt = "Ты - помощник студента. Посмотри на это фото (слайд лекции или доска). " +
+                               "1. Распознай весь текст. " +
+                               "2. Если текст плохо виден, восстанови его по смыслу. " +
+                               "3. Исправь грамматические ошибки. " +
+                               "4. Оформи красиво: используй заголовки, списки, выдели важные термины. " +
+                               "Верни только готовый текст конспекта.";
+
+                const result = await model.generateContent([prompt, base64Data]);
+                const response = await result.response;
+                const text = response.text();
+
+                resultArea.innerText = text; // Вставляем результат
+            } catch (error) {
+                resultArea.innerText = "Ошибка: " + error.message;
+            } finally {
+                loader.style.display = 'none';
+            }
         });
 
-        // Функция скачивания
-        function downloadWord() {
-            const text = textArea.value;
-            // Создаем простой HTML файл, который Word умеет открывать
-            const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' "+
-                "xmlns:w='urn:schemas-microsoft-com:office:word' "+
-                "xmlns='http://www.w3.org/TR/REC-html40'>"+
-                "<head><meta charset='utf-8'><title>Export HTML to Word Document with JavaScript</title></head><body>";
-            const footer = "</body></html>";
-            
-            // Заменяем переносы строк на html теги
-            const sourceHTML = header+text.replace(/\n/g, "<br>")+footer;
-            
-            const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
-            const fileDownload = document.createElement("a");
-            document.body.appendChild(fileDownload);
-            fileDownload.href = source;
-            fileDownload.download = 'lectures.doc';
-            fileDownload.click();
-            document.body.removeChild(fileDownload);
+        // Функция превращения файла в формат для AI
+        async function fileToGenerativePart(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve({
+                    inlineData: { data: reader.result.split(',')[1], mimeType: file.type },
+                });
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Скачивание (сделал глобальной функцией для доступа из HTML)
+        window.saveDoc = function() {
+            const text = document.getElementById('result-area').innerText;
+            const blob = new Blob(['\ufeff' + text], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'AI_Lecture.doc';
+            a.click();
         }
     </script>
 </body>
