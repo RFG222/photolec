@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Конспект (Исправленный)</title>
+    <title>✨ Финальный AI Конспект</title>
     <script type="importmap">
       {
         "imports": {
@@ -12,124 +12,138 @@
       }
     </script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; background: #f0f2f5; color: #333; }
-        h2 { text-align: center; color: #4285f4; margin-bottom: 20px;}
-        .container { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 650px; margin: 0 auto; background: #f0f4f8; color: #333; }
+        h2 { text-align: center; color: #1e88e5; margin-bottom: 25px; }
+        .container { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
         
+        /* Кнопка загрузки/камеры */
         .file-upload {
-            border: 2px dashed #4285f4; padding: 25px; text-align: center; cursor: pointer;
-            border-radius: 12px; background: #e8f0fe; color: #4285f4; font-weight: 600;
-            display: block; margin-bottom: 20px; transition: all 0.2s;
+            border: 2px dashed #1e88e5; padding: 25px; text-align: center; cursor: pointer;
+            border-radius: 12px; background: #e3f2fd; color: #1e88e5; font-weight: 600;
+            display: block; margin-bottom: 20px; font-size: 1.1em; transition: 0.2s;
         }
-        .file-upload:active { transform: scale(0.98); }
+        .file-upload:active { background: #bbdefb; }
         input[type="file"] { display: none; }
 
+        /* Поле результата (редактируемое) */
         #result-area {
-            width: 100%; min-height: 200px; padding: 15px; border: 1px solid #e1e4e8;
-            border-radius: 12px; font-size: 16px; line-height: 1.6; background: #fafafa;
-            margin-bottom: 15px; white-space: pre-wrap; outline: none;
+            width: 100%; min-height: 250px; padding: 15px; border: 1px solid #ddd;
+            border-radius: 10px; font-size: 16px; line-height: 1.6; background: #fafafa;
+            margin-bottom: 15px; white-space: pre-wrap; outline: none; box-sizing: border-box;
+            resize: vertical; /* Позволяет менять размер */
         }
-        #result-area:focus { border-color: #4285f4; background: #fff; }
 
         button.save-btn {
-            background: #34a853; color: white; border: none; padding: 16px; width: 100%;
-            border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: background 0.2s;
+            background: #4caf50; color: white; border: none; padding: 16px; width: 100%;
+            border-radius: 10px; font-size: 1.1em; font-weight: bold; cursor: pointer;
+            transition: background 0.2s;
         }
-        button.save-btn:hover { background: #2e8b46; }
+        button.save-btn:hover { background: #388e3c; }
 
-        img#preview { max-width: 100%; border-radius: 12px; margin-bottom: 20px; display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        #loader { text-align: center; display: none; font-weight: bold; color: #555; margin: 15px 0; }
+        img#preview { max-width: 100%; border-radius: 10px; margin-bottom: 20px; display: none; }
+        #loader { text-align: center; display: none; font-weight: bold; color: #ff9800; margin: 15px 0; }
         
-        .error { color: #d93025; background: #fce8e6; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none;}
+        .error { color: #d32f2f; background: #ffebee; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none;}
+        small { display: block; text-align: center; color: #757575; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <h2>📝 Умный Конспект</h2>
+    <h2>🎓 Умный Конспект Лекций</h2>
     
     <div class="container">
         <label for="fileInput" class="file-upload">
-            📸 Сфоткать слайд
+            📷 Нажмите, чтобы сфотографировать или выбрать слайд
         </label>
         <input type="file" id="fileInput" accept="image/*" capture="environment">
 
         <img id="preview" src="">
         
-        <div id="loader">⚡ Обрабатываю фото...</div>
+        <div id="loader">⚡ Обработка началась. Ожидайте...</div>
         <div id="error-msg" class="error"></div>
         
-        <div id="result-area" contenteditable="true">Текст появится здесь...</div>
+        <div id="result-area" contenteditable="true">После обработки здесь появится чистый, исправленный и отформатированный конспект.</div>
 
-        <button class="save-btn" onclick="saveDoc()">💾 Скачать Word</button>
+        <button class="save-btn" onclick="saveDoc()">💾 Скачать в Word (.doc)</button>
+
+        <small>Активная модель: <b id="active-model">gemini-pro</b> | API-ключ не должен быть публичным!</small>
     </div>
 
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        // ==========================================
-        // 👇 ВСТАВЬ СЮДА СВОЙ КЛЮЧ
+        // =========================================================
+        // !!! ВСТАВЬТЕ СЮДА ВАШ СЕКРЕТНЫЙ API KEY !!!
         const API_KEY = "AIzaSyB1O8MLw6IVmsZlpVbKwhvJP8trLwY2zwM"; 
-        // 👆 Например: "AIzaSyD..."
-        // ==========================================
+        // =========================================================
 
         const genAI = new GoogleGenerativeAI(API_KEY);
-        
-        // Используем самую новую доступную модель
-        // Если снова будет ошибка 404, попробуй поменять на "gemini-2.0-flash"
-        const MODEL_NAME = "gemini-pro";
+        // Используем самую стабильную модель для предотвращения 404
+        const MODEL_NAME = "gemini-pro"; 
 
         const fileInput = document.getElementById('fileInput');
         const resultArea = document.getElementById('result-area');
         const loader = document.getElementById('loader');
         const preview = document.getElementById('preview');
         const errorMsg = document.getElementById('error-msg');
+        const activeModelDisplay = document.getElementById('active-model');
+
+        activeModelDisplay.innerText = MODEL_NAME; // Отображаем модель на странице
 
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Сброс интерфейса
+            // Сброс и индикация
             preview.src = URL.createObjectURL(file);
             preview.style.display = 'block';
             loader.style.display = 'block';
             errorMsg.style.display = 'none';
-            resultArea.innerText = "⏳ Думаю...";
+            resultArea.innerHTML = "⏳ Ожидание ответа от нейросети...";
             resultArea.style.opacity = "0.5";
 
             try {
+                // 1. Конвертируем файл в Base64 для передачи API
                 const base64Data = await fileToGenerativePart(file);
+                
+                // 2. Инициализация модели
                 const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
-                const prompt = `Ты - помощник студента. Твоя задача - транскрибировать текст с этого изображения.
-                1. Если это слайд презентации, выпиши заголовок и основные пункты.
-                2. Если текст обрезан или плохо виден, восстанови его по смыслу.
-                3. Исправь опечатки.
-                4. Не пиши вступительных слов вроде "Вот текст", просто дай чистый конспект.`;
+                // 3. Промпт: четкая инструкция по транскрипции и форматированию
+                const prompt = `Ты - продвинутый помощник студента, специализирующийся на конспектах.
+                Проанализируй предоставленное изображение (слайд, доска или рукописный текст).
+                Твои задачи:
+                1. Распознай весь видимый текст, включая русский и английский.
+                2. Если текст неразборчив (из-за плохого качества фото или почерка), восстанови его по смыслу, исходя из общих знаний.
+                3. Исправь грамматические и орфографические ошибки.
+                4. Оформи результат в виде аккуратного конспекта, используя маркированные списки, заголовки (#, ##) и выделение жирным шрифтом для ключевых терминов.
+                Не добавляй никаких вводных фраз типа "Вот ваш конспект" или "Распознанный текст:". Выдай только чистый, готовый конспект.`;
 
                 const result = await model.generateContent([prompt, base64Data]);
                 const response = await result.response;
                 const text = response.text();
 
-                resultArea.innerText = text;
+                // 4. Добавляем текст к предыдущему конспекту
+                const currentText = resultArea.innerText.includes("Текст появится здесь...") ? "" : resultArea.innerText;
+                resultArea.innerText = currentText + "\n\n---\n\n" + text;
                 resultArea.style.opacity = "1";
             } catch (error) {
-                console.error(error);
+                console.error("API Error:", error);
                 let msg = error.message;
                 
-                // Простая расшифровка популярных ошибок для тебя
-                if (msg.includes("404")) msg = "Ошибка 404: Модель не найдена. Попробуй заменить в коде MODEL_NAME на 'gemini-pro'.";
-                if (msg.includes("403") || msg.includes("Key")) msg = "Ошибка ключа: Проверь, правильно ли ты вставил API Key.";
-                if (msg.includes("Failed to fetch")) msg = "Нет интернета или нужен VPN (если ты в РФ).";
+                if (msg.includes("404")) msg = "Ошибка 404: Модель устарела. Попробуй 'gemini-2.5-flash'.";
+                if (msg.includes("403") || msg.includes("Key")) msg = "Ошибка 403: Проверь API Key и баланс на Google AI Studio.";
+                if (msg.includes("Load failed") || msg.includes("Failed to fetch")) msg = "❌ Ошибка сети: Нет интернета или ваш провайдер блокирует API Google (используй VPN).";
 
-                errorMsg.innerText = "❌ " + msg;
+                errorMsg.innerText = "❌ Проблема: " + msg;
                 errorMsg.style.display = 'block';
-                resultArea.innerText = "";
+                resultArea.innerHTML = "Попробуйте еще раз или проверьте подключение/VPN.";
             } finally {
                 loader.style.display = 'none';
             }
         });
 
+        // Функция превращения файла в формат для AI
         async function fileToGenerativePart(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -140,16 +154,24 @@
             });
         }
 
+        // Функция скачивания текста в файл .doc
         window.saveDoc = function() {
             const text = document.getElementById('result-area').innerText;
-            const blob = new Blob(['\ufeff' + text], { type: 'application/msword' });
+            // Создаем простой HTML, который Word может открыть как документ
+            const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Конспект</title></head><body>";
+            const footer = "</body></html>";
+            
+            // Превращаем переводы строк в теги <br> для HTML/Word
+            const sourceHTML = header + text.replace(/\n/g, "<br>") + footer;
+            
+            // Создаем Blob и скачиваем его
+            const blob = new Blob(['\ufeff' + sourceHTML], { type: 'application/msword' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Lecture_${new Date().toLocaleTimeString().replace(/:/g,'-')}.doc`;
+            a.download = `Конспект_${new Date().toLocaleDateString('ru-RU')}.doc`;
             a.click();
         }
     </script>
 </body>
 </html>
-
