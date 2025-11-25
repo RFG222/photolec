@@ -186,6 +186,7 @@
     <script type="module">
         // =========================================================
         // !!! 2. ВСТАВЬТЕ СЮДА СКОПИРОВАННЫЙ URL CLOUDFLARE !!!
+        // Пример: https://rapid-rice-04b2.ivandobrakov25.workers.dev/
         const PROXY_SERVER_URL = "https://rapid-rice-04b2.ivandobrakov25.workers.dev/"; 
         // =========================================================
 
@@ -232,10 +233,8 @@
                 
                 // 2. ОТПРАВКА ЗАПРОСА НА ПРОКСИ-СЕРВЕР (Cloudflare Worker)
                 const response = await fetch(PROXY_SERVER_URL, {
-                    // !!! ОБЯЗАТЕЛЬНО: МЕТОД POST !!!
                     method: 'POST', 
                     headers: {
-                        // Меняем Content-Type на JSON для корректной работы с Worker
                         'Content-Type': 'application/json', 
                     },
                     // Отправляем Base64 и MIME-тип в теле запроса
