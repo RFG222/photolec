@@ -4,16 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Лекции</title> 
-    <script type="importmap">
-      {
-        "imports": {
-          "@google/generative-ai": "https://esm.run/@google/generative-ai"
-        }
-      }
-    </script>
     <style>
         /* ======================================= */
-        /* === ОБЩИЙ СТИЛЬ И ТЕМНЫЙ ФОН === */
+        /* === ОБЩИЙ СТИЛЬ И ТЕМНЫЙ ФОН (Dark Mode) === */
         /* ======================================= */
         body { 
             font-family: 'Times New Roman', serif; 
@@ -21,8 +14,8 @@
             padding: 20px; 
             max-width: 750px; 
             margin: 0 auto; 
-            background: #1a1a1a; /* Основной темно-серый фон */
-            color: #f5f5f5; /* Светлый текст */
+            background: #1a1a1a; 
+            color: #f5f5f5; 
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -30,13 +23,13 @@
         }
 
         .container { 
-            background: #252525; /* Темно-коричневый фон контейнера */
+            background: #252525; 
             padding: 35px; 
             border-radius: 12px; 
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); /* Глубокая тень */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); 
             width: 100%;
             margin-top: 30px;
-            border: 1px solid #333; /* Тонкая рамка */
+            border: 1px solid #333; 
         }
         
         /* ======================================= */
@@ -44,7 +37,7 @@
         /* ======================================= */
         h2 { 
             text-align: center; 
-            color: #e0b973; /* Золотистый акцентный цвет */
+            color: #e0b973; 
             margin-bottom: 30px; 
             font-size: 24pt; 
             font-weight: 400; 
@@ -52,11 +45,10 @@
             text-transform: uppercase;
         }
 
-        /* Заголовки конспекта (h1, h2, h3) */
         h1, h2, h3 { 
             font-family: 'Times New Roman', serif;
             font-size: 16pt;
-            color: #f0f0f0; /* Светлый заголовок внутри конспекта */
+            color: #f0f0f0; 
             margin-bottom: 10px; 
             margin-top: 25px;
         }
@@ -71,7 +63,7 @@
             cursor: pointer;
             border-radius: 8px; 
             background: #333; 
-            color: #e0b973; /* Золотистый текст акцента */
+            color: #e0b973; 
             font-weight: 600;
             display: block; 
             margin-bottom: 25px; 
@@ -104,7 +96,7 @@
             transition: background 0.2s, color 0.2s;
         }
         .editor-toolbar button:hover {
-            background: #e0b973; /* Золотистый акцент на кнопках */
+            background: #e0b973; 
             color: #1a1a1a;
         }
         .editor-toolbar .clear-btn {
@@ -126,8 +118,8 @@
             border-radius: 8px; 
             font-size: 14pt; 
             line-height: 1.6; 
-            background: #1f1f1f; /* Очень темный фон для поля */
-            color: #f5f5f5; /* Светлый текст внутри поля */
+            background: #1f1f1f; 
+            color: #f5f5f5; 
             margin-bottom: 25px; 
             outline: none; 
             box-sizing: border-box;
@@ -135,12 +127,12 @@
             transition: box-shadow 0.3s, border-color 0.3s;
         }
         #result-area:focus {
-            box-shadow: 0 0 0 2px #e0b973; /* Золотистая подсветка при фокусе */
+            box-shadow: 0 0 0 2px #e0b973; 
             border-color: #e0b973;
         }
 
         button.save-btn {
-            background: #e0b973; /* Золотистая кнопка сохранения */
+            background: #e0b973; 
             color: #1a1a1a; 
             border: none; 
             padding: 18px; 
@@ -192,15 +184,10 @@
     </div>
 
     <script type="module">
-        import { GoogleGenerativeAI } from "@google/generative-ai";
-
         // =========================================================
-        // !!! ВСТАВЬТЕ СЮДА ВАШ СЕКРЕТНЫЙ API KEY !!!
-        const API_KEY = "AIzaSyB1O8MLw6IVmsZlpVbKwhvJP8trLwY2zwM";
+        // !!! 2. ВСТАВЬТЕ СЮДА СКОПИРОВАННЫЙ URL CLOUDFLARE !!!
+        const PROXY_SERVER_URL = "https://rapid-rice-04b2.ivandobrakov25.workers.dev/"; 
         // =========================================================
-
-        const genAI = new GoogleGenerativeAI(API_KEY);
-        const MODEL_NAME = "gemini-2.5-flash";
 
         const fileInput = document.getElementById('fileInput');
         const resultArea = document.getElementById('result-area');
@@ -235,36 +222,45 @@
 
             let text = "";
             let base64Data; 
+            let mimeType;
 
             try {
-                // Используем функцию сжатия для ускорения на мобильных
-                base64Data = await compressAndConvertFile(file);
+                // 1. СЖАТИЕ И КОДИРОВАНИЕ (Локальное выполнение)
+                const compressedFile = await compressAndConvertFile(file);
+                base64Data = compressedFile.inlineData.data;
+                mimeType = compressedFile.inlineData.mimeType;
                 
-                const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+                // 2. ОТПРАВКА ЗАПРОСА НА ПРОКСИ-СЕРВЕР (Cloudflare Worker)
+                const response = await fetch(PROXY_SERVER_URL, {
+                    // !!! ОБЯЗАТЕЛЬНО: МЕТОД POST !!!
+                    method: 'POST', 
+                    headers: {
+                        // Меняем Content-Type на JSON для корректной работы с Worker
+                        'Content-Type': 'application/json', 
+                    },
+                    // Отправляем Base64 и MIME-тип в теле запроса
+                    body: JSON.stringify({ base64Data, mimeType }) 
+                });
 
-                const prompt = `Ты - продвинутый помощник студента, специализирующийся на конспектах.
-                Проанализируй предоставленное изображение (слайд, доска или рукописный текст).
-                Твои задачи:
-                1. Распознай весь видимый текст, включая русский и английский.
-                2. Если текст неразборчив (из-за плохого качества фото или почерка), восстанови его по смыслу, исходя из общих знаний.
-                3. Исправь грамматические и орфографические ошибки.
-                4. **Оформи результат строго в формате HTML**, используя теги <h1> (для главных тем), <h2> (для подразделов), <b> (для выделения ключевых терминов), <ul> и <li> (для списков).
-                5. Выделяй важные моменты жирным шрифтом (<b>).
-                6. Не добавляй никаких разделителей, пустых строк или символов между конспектами слайдов. Выдай только чистый, готовый конспект в формате HTML.`;
+                // 3. ОБРАБОТКА ОТВЕТА ОТ ПРОКСИ
+                const jsonResponse = await response.json();
 
-                const result = await model.generateContent([prompt, base64Data]);
-                const response = await result.response;
-                text = response.text();
+                if (jsonResponse.success) {
+                    text = jsonResponse.text;
+                } else {
+                    // Ошибка от Прокси-сервера (включая ошибки Gemini)
+                    throw new Error(jsonResponse.error);
+                }
                 
             } catch (error) {
-                console.error("API Error:", error);
+                console.error("Fetch Error:", error);
                 let msg = error.message;
                 
-                if (msg.includes("400") && msg.includes("User location")) msg = "❌ Региональная блокировка: VPN не скрывает вашу геолокацию. Попробуйте режим Инкогнито или другой сервер VPN.";
-                if (msg.includes("404")) msg = "Ошибка 404: Модель не найдена. Попробуй заменить MODEL_NAME в коде на 'gemini-pro'.";
-                if (msg.includes("403") || msg.includes("Key")) msg = "Ошибка 403: Проверь API Key и баланс на Google AI Studio.";
-                if (msg.includes("Load failed") || msg.includes("Failed to fetch")) msg = "❌ Ошибка сети: Нет интернета или VPN слишком медленный.";
-
+                if (msg.includes("Gemini API Error")) msg = "❌ Ошибка Gemini API: Проверьте, что в Cloudflare Worker вставлен рабочий API Key.";
+                if (msg.includes("Failed to fetch")) msg = "❌ Ошибка сети: Нет интернета или проблема с URL Cloudflare Worker.";
+                if (msg.includes("Worker Runtime Error")) msg = "❌ Ошибка Worker: Проверьте логи Cloudflare Worker.";
+                if (msg.includes("JSON")) msg = "❌ Ошибка ответа Worker: Сервер вернул неверный формат ответа. Проверьте логи Worker.";
+                
                 errorMsg.innerText = "❌ Проблема: " + msg;
                 errorMsg.style.display = 'block';
                 text = `<b><p>[Ошибка загрузки. Попробуйте снова. ${msg}]</p></b>`; 
@@ -273,8 +269,6 @@
                 
                 // 4. ДОБАВЛЕНИЕ ТЕКСТА
                 const currentContent = resultArea.innerHTML.trim();
-                
-                // Добавляем перенос строки
                 const separator = currentContent.length > 0 ? "<p>&nbsp;</p>" : ""; 
                 
                 resultArea.innerHTML = currentContent + separator + text;
@@ -282,6 +276,7 @@
             }
         });
 
+        // Функция сжатия остается без изменений (локальная)
         async function compressAndConvertFile(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -304,7 +299,6 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // Сжимаем и кодируем в JPEG 
                         const dataUrl = canvas.toDataURL('image/jpeg', 0.8); 
                         
                         resolve({
