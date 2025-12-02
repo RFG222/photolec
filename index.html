@@ -1,334 +1,98 @@
-/* ======================================= */
-/* === ОСНОВНЫЕ СТИЛИ И ФИКСАЦИЯ ВЫСОТЫ === */
-/* ======================================= */
-html, body {
-    height: 100%; 
-    margin: 0;
-    padding: 0;
-}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Лекции</title> 
 
-body { 
-    font-family: 'Segoe UI', Arial, sans-serif;
-    font-size: 14pt;
-    padding: 20px; 
-    background: #121212;
-    color: #f5f5f5; 
-    box-sizing: border-box; 
+    <link rel="stylesheet" href="style.css"> 
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
+</head>
+<body>
+
+    <button id="help-btn" onclick="openModal()">?</button>
+    <div id="helpModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h3>💡 AI Лекции: Ваш умный помощник</h3>
+        
+        <p>Этот инструмент использует нейросеть **Gemini** для преобразования изображений (слайдов, рукописных конспектов, заметок) в чистый, структурированный и готовый к печати или дальнейшему редактированию текст.</p>
+
+        <hr>
+
+        <h4>Возможности сервиса</h4>
+        <p>Сервис "AI Лекции" создан не только для студентов, но и для всех, кому нужно быстро перевести визуальную информацию в цифровой вид:</p>
+        <ul>
+            <li>
+                <strong>Для студентов и учащихся:</strong>
+                Быстрое конспектирование лекций, презентаций и записей из тетрадей с автоматическим исправлением ошибок.
+            </li>
+            <li>
+                <strong>Для организации заметок:</strong>
+                Эффективное преобразование бумажных или сфотографированных документов в редактируемый цифровой формат.
+            </li>
+            <li>
+                <strong>Редактирование и форматирование:</strong>
+                Вы получаете текст, который можно сразу редактировать, форматировать (жирный, списки) и сохранять.
+            </li>
+        </ul>
+
+        <hr>
+
+        <h4>Как пользоваться (Пошаговая инструкция)</h4>
+        <ol>
+            <li><strong>Загрузка фото:</strong> Нажмите кнопку **"Загрузить фото"**.</li>
+            <li><strong>Анализ:</strong> Нейросеть **Gemini** проанализирует, распознает и оформит текст.</li>
+            <li><strong>Просмотр и редактирование:</strong> Текст появится справа. Вы можете его **редактировать** и форматировать.</li>
+            <li><strong>Смена вида:</strong> Кнопка в правом верхнем углу меняет режим отображения.</li>
+            <li><strong>Функции сохранения:</strong> **Сжать и Скачать** (сокращение на ~40%) или **Скачать Word** (полный текст).</li>
+            <li><strong>Очистка:</strong> Кнопка **X** удаляет весь текст из конспекта.</li>
+        </ol>
+      </div>
+    </div>
+
+
+    <h2>AI Лекции</h2>
     
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    overflow-y: auto; 
-}
+    <div class="container" id="mainContainer">
+        <button class="layout-toggle-btn" id="toggleLayoutBtn" onclick="toggleLayout()" title="Переключить вид">
+            ◫
+        </button>
 
-h2 { 
-    flex-shrink: 0; 
-    text-align: center; 
-    color: #e0b973; 
-    margin-bottom: 20px; 
-    font-size: 24pt; 
-    font-weight: 400; 
-    letter-spacing: 2px;
-    text-transform: uppercase;
-}
+        <div class="panel-left">
+            <label for="fileInput" id="uploadLabel" class="file-upload">
+                🖼️ Загрузить фото
+            </label>
+            <input type="file" id="fileInput" accept="image/*" capture="environment" multiple>
+            <img id="preview" src="">
+        </div>
 
-/* --- КОНТЕЙНЕР --- */
-.container { 
-    background: #1f1f1f;
-    padding: 30px; 
-    border-radius: 12px; 
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
-    border: 1px solid #333; 
-    position: relative;
-    width: 100%;
-    max-width: 750px; 
-    transition: all 0.3s ease-in-out;
-    
-    display: flex;
-    flex-direction: column; 
-    gap: 15px;
-    flex-grow: 1; 
-    min-height: 0; 
-    margin-bottom: 20px;
-}
+        <div class="panel-right">
+            <div id="loader">⚡ Обработка...</div>
+            <div id="error-msg" class="error"></div>
 
-/* --- ПАНЕЛИ (Общие) --- */
-.panel-left {
-    width: 100%;
-    transition: width 0.3s;
-    flex-shrink: 0;
-}
-.panel-right {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    min-height: 0; 
-}
+            <div class="editor-toolbar">
+                <button onclick="formatText('bold')">B</button>
+                <button onclick="formatText('italic')">I</button>
+                <button onclick="formatText('insertOrderedList')">1.</button>
+                <button onclick="formatText('insertUnorderedList')">U</button>
+                <button class="clear-btn" onclick="clearContent()">X</button>
+            </div>
+            
+            <div id="result-area" contenteditable="true"></div>
 
+            <button id="shrinkBtn" class="action-btn shrink-btn" onclick="shrinkAndSaveDoc()">✨ Сжать и Скачать (Сокращенный)</button>
+            <button id="saveBtn" class="action-btn save-btn" onclick="saveDoc()">💾 Скачать Word</button>
+        </div>
+    </div>
 
-/* --- РЕЖИМ "SPLIT" (ДВЕ КОЛОНКИ) --- */
-.container.split-mode {
-    max-width: 95vw; 
-    flex-direction: row; 
-    height: 90vh; 
-    flex-grow: 0; 
-    align-items: stretch;
-    margin-top: 0;
-}
-
-.container.split-mode .panel-left {
-    width: 50%;
-    min-width: 300px;
-    border-right: 1px solid #444;
-    padding-right: 20px;
-    overflow-y: auto; 
-    flex-grow: 0;
-    flex-shrink: 0;
-}
-
-.container.split-mode .panel-right {
-    width: 50%;
-    min-width: 300px;
-    padding-left: 20px;
-    flex-grow: 1;
-    flex-shrink: 1;
-    height: 100%;
-    min-height: 0; 
-}
-
-/* --- КНОПКА ПЕРЕКЛЮЧЕНИЯ ВИДА --- */
-.layout-toggle-btn {
-    position: absolute;
-    top: 15px; 
-    right: 15px;
-    background: #333; color: #e0b973; border: 1px solid #555;
-    width: 35px; height: 35px; border-radius: 6px;
-    font-size: 1.1em; display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s; z-index: 100;
-}
-.layout-toggle-btn:hover { background: #444; }
-
-
-/* ======================================= */
-/* === СТИЛИ КНОПКИ ПОМОЩИ И МОДАЛЬНОГО ОКНА === */
-/* ======================================= */
-
-#help-btn {
-    position: fixed;
-    top: 20px; 
-    left: 20px;
-    background: #333;
-    color: #e0b973; 
-    border: 1px solid #555;
-    width: 35px; 
-    height: 35px; 
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 1.2em;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    z-index: 1000;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-}
-#help-btn:hover {
-    background: #e0b973;
-    color: #1a1a1a;
-    transform: scale(1.1);
-}
-
-.modal {
-    display: none;
-    position: fixed; 
-    z-index: 2000; 
-    left: 0;
-    top: 0;
-    width: 100%; 
-    height: 100%; 
-    overflow: auto; 
-    background-color: rgba(0,0,0,0.8);
-}
-
-.modal-content {
-    background-color: #1f1f1f;
-    margin: 5% auto;
-    padding: 30px;
-    border: 1px solid #333;
-    width: 80%; 
-    max-width: 700px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
-    color: #f5f5f5;
-}
-.modal-content h3 {
-    color: #e0b973;
-    border-bottom: 1px solid #444;
-    padding-bottom: 10px;
-    margin-top: 0;
-    font-size: 1.5em;
-}
-.modal-content p, .modal-content li {
-    font-size: 12pt;
-    line-height: 1.6;
-}
-.modal-content strong {
-    color: #e0b973;
-}
-
-.close-btn {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    transition: color 0.2s;
-}
-.close-btn:hover,
-.close-btn:focus {
-    color: #e0b973;
-    text-decoration: none;
-    cursor: pointer;
-}
-hr {
-    border-top: 1px solid #444; 
-    margin: 20px 0;
-}
-
-
-/* ======================================= */
-/* === Стили элементов интерфейса === */
-/* ======================================= */
-
-.file-upload {
-    border: 2px dashed #444; 
-    padding: 25px; 
-    text-align: center; 
-    cursor: pointer;
-    border-radius: 6px; 
-    background: #252525; 
-    color: #e0b973; 
-    font-weight: 600;
-    display: block; 
-    margin-bottom: 15px; 
-    font-size: 1.1em; 
-    transition: all 0.2s ease;
-}
-.file-upload:hover { 
-    background: #2e2e2e; 
-    border-color: #e0b973; 
-}
-
-img#preview { max-width: 100%; border-radius: 6px; display: none; border: 1px solid #444; flex-shrink: 0; }
-input[type="file"] { display: none; }
-
-.editor-toolbar {
-    flex-shrink: 0; 
-    display: flex; 
-    gap: 5px; 
-    margin-bottom: 10px; 
-    border-bottom: 1px solid #333; 
-    padding-bottom: 10px;
-}
-.editor-toolbar button {
-    background: #333; 
-    color: #f5f5f5; 
-    border: none; 
-    padding: 8px 12px; 
-    border-radius: 4px; 
-    cursor: pointer;
-    font-weight: bold;
-    font-style: normal;
-    transition: background 0.2s;
-}
-.editor-toolbar button:hover { 
-    background: #e0b973; 
-    color: #1a1a1a; 
-}
-.editor-toolbar .clear-btn { 
-    margin-left: auto; 
-    background: #dc3545; 
-    color: white;
-    font-size: 1em;
-    padding: 8px 15px;
-}
-
-#result-area {
-    width: 100%; 
-    padding: 20px; 
-    border: 1px solid #444;
-    border-radius: 6px; 
-    font-size: 14pt; 
-    line-height: 1.6; 
-    background: #121212; 
-    color: #f5f5f5; 
-    outline: none; 
-    box-sizing: border-box;
-    margin-bottom: 10px; 
-    
-    flex-grow: 1; 
-    min-height: 300px; 
-    overflow: auto; /* Финальное исправление: позволяет видеть ручку resize */
-    resize: vertical; /* Разрешить растягивать окно по высоте */
-}
-
-button.action-btn { 
-    flex-shrink: 0; 
-    width: 100%; 
-    padding: 14px; 
-    border-radius: 6px; 
-    font-size: 1.1em; 
-    font-weight: bold; 
-    cursor: pointer; 
-    border: none; 
-    margin-top: 5px;
-    transition: background 0.2s, transform 0.1s;
-}
-
-button.save-btn { 
-    background: #e0b973; 
-    color: #1a1a1a; 
-}
-button.save-btn:hover { 
-    background: #c9a764; 
-    transform: translateY(-1px);
-}
-
-button.shrink-btn { 
-    background: #444; 
-    color: #f5f5f5; 
-    border: 1px solid #555; 
-}
-button.shrink-btn:hover { 
-    background: #555;
-    transform: translateY(-1px);
-}
-
-#loader { text-align: center; display: none; font-weight: bold; color: #e0b973; margin: 15px 0; }
-.error { color: #f8d7da; background: #c82333; padding: 12px; border-radius: 6px; margin-bottom: 15px; display: none; }
-.file-upload.disabled, button:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
-
-
-/* ======================================= */
-/* === АДАПТИВНОСТЬ: МОБИЛЬНЫЙ ВИД (< 750px) === */
-/* ======================================= */
-
-@media (max-width: 750px) {
-    .panel-right {
-        min-height: 70vh; 
-    }
-    
-    #result-area {
-        min-height: 250px;
-    }
-    
-    .panel-left {
-        min-height: auto;
-        max-height: 40vh; 
-        overflow-y: auto; 
-    }
-
-    .layout-toggle-btn {
-        display: none;
-    }
-}
+    <script type="module" src="main.js"></script>
+</body>
+</html>
