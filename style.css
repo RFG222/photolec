@@ -268,7 +268,7 @@ input[type="file"] { display: none; }
     
     flex-grow: 1; 
     min-height: 300px; 
-    overflow: auto; /* Финальное исправление: позволяет видеть ручку resize */
+    overflow: auto; /* Позволяет видеть ручку resize и прокрутку */
     resize: vertical; /* Разрешить растягивать окно по высоте */
 }
 
@@ -315,7 +315,7 @@ button.shrink-btn:hover {
 
 @media (max-width: 750px) {
     .panel-right {
-        min-height: 70vh; 
+        min-height: 70vh; /* Увеличенная высота в мобильном виде */
     }
     
     #result-area {
