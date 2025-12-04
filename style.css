@@ -3,7 +3,209 @@
 /* ======================================= */
 html, body {
     height: 100%; 
+    margin: 0;/* ======================================= */
+/* === ОСНОВНЫЕ СТИЛИ === */
+/* ======================================= */
+html, body {
+    height: 100%; 
     margin: 0;
+    padding: 0;
+}
+
+body { 
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 14pt;
+    padding: 20px; 
+    background: #121212;
+    color: #f5f5f5; 
+    box-sizing: border-box; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto; 
+}
+
+h2 { 
+    flex-shrink: 0; 
+    text-align: center; 
+    color: #e0b973; 
+    margin-bottom: 20px; 
+    font-size: 24pt; 
+    font-weight: 400; 
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* --- КОНТЕЙНЕР --- */
+.container { 
+    background: #1f1f1f;
+    padding: 30px; 
+    border-radius: 12px; 
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
+    border: 1px solid #333; 
+    position: relative;
+    width: 100%;
+    max-width: 750px; 
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column; 
+    gap: 15px;
+    flex-grow: 1; 
+    min-height: 0; 
+    margin-bottom: 20px;
+}
+
+/* --- РЕЖИМ "SPLIT" (ДВЕ КОЛОНКИ - ПК) --- */
+.container.split-mode {
+    max-width: 95vw; 
+    flex-direction: row; 
+    height: 90vh; 
+    flex-grow: 0; 
+    align-items: stretch;
+    margin-top: 0;
+}
+
+.panel-left {
+    width: 100%;
+    transition: width 0.3s;
+    flex-shrink: 0;
+}
+
+.panel-right {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0; 
+}
+
+.container.split-mode .panel-left {
+    width: 50%;
+    min-width: 300px;
+    border-right: 1px solid #444;
+    padding-right: 20px;
+    overflow-y: auto; 
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.container.split-mode .panel-right {
+    width: 50%;
+    min-width: 300px;
+    padding-left: 20px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    height: 100%;
+}
+
+/* --- КНОПКА ПЕРЕКЛЮЧЕНИЯ ВИДА --- */
+.layout-toggle-btn {
+    position: absolute;
+    top: 15px; 
+    right: 15px;
+    background: #333; color: #e0b973; border: 1px solid #555;
+    width: 35px; height: 35px; border-radius: 6px;
+    font-size: 1.1em; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; z-index: 100;
+    cursor: pointer;
+}
+.layout-toggle-btn:hover { background: #444; }
+
+/* --- ЭЛЕМЕНТЫ ИНТЕРФЕЙСА --- */
+.file-upload {
+    border: 2px dashed #444; 
+    padding: 25px; 
+    text-align: center; 
+    cursor: pointer;
+    border-radius: 6px; 
+    background: #252525; 
+    color: #e0b973; 
+    font-weight: 600;
+    display: block; 
+    margin-bottom: 15px; 
+    font-size: 1.1em; 
+    transition: all 0.2s ease;
+}
+.file-upload:hover { background: #2e2e2e; border-color: #e0b973; }
+
+img#preview { max-width: 100%; border-radius: 6px; display: none; border: 1px solid #444; flex-shrink: 0; }
+input[type="file"] { display: none; }
+
+.editor-toolbar {
+    flex-shrink: 0; 
+    display: flex; 
+    gap: 5px; 
+    margin-bottom: 10px; 
+    border-bottom: 1px solid #333; 
+    padding-bottom: 10px;
+}
+.editor-toolbar button {
+    background: #333; color: #f5f5f5; border: none; 
+    padding: 8px 12px; border-radius: 4px; cursor: pointer;
+    font-weight: bold; transition: background 0.2s;
+}
+.editor-toolbar button:hover { background: #e0b973; color: #1a1a1a; }
+.editor-toolbar .clear-btn { margin-left: auto; background: #dc3545; color: white; font-size: 1em; padding: 8px 15px; }
+
+/* --- ПОЛЕ РЕЗУЛЬТАТА --- */
+#result-area {
+    width: 100%; 
+    padding: 20px; 
+    border: 1px solid #444;
+    border-radius: 6px; 
+    font-size: 14pt; 
+    line-height: 1.6; 
+    background: #121212; 
+    color: #f5f5f5; 
+    outline: none; 
+    box-sizing: border-box;
+    margin-bottom: 10px; 
+    
+    flex-grow: 1; 
+    min-height: 300px; 
+    overflow: auto; 
+    resize: vertical; /* РАСТЯГИВАНИЕ ОКНА */
+}
+
+button.action-btn { 
+    flex-shrink: 0; width: 100%; padding: 14px; border-radius: 6px; 
+    font-size: 1.1em; font-weight: bold; cursor: pointer; border: none; margin-top: 5px;
+    transition: background 0.2s, transform 0.1s;
+}
+button.save-btn { background: #e0b973; color: #1a1a1a; }
+button.save-btn:hover { background: #c9a764; transform: translateY(-1px); }
+button.shrink-btn { background: #444; color: #f5f5f5; border: 1px solid #555; }
+button.shrink-btn:hover { background: #555; transform: translateY(-1px); }
+
+#loader { text-align: center; display: none; font-weight: bold; color: #e0b973; margin: 15px 0; }
+.error { color: #f8d7da; background: #c82333; padding: 12px; border-radius: 6px; margin-bottom: 15px; display: none; }
+.file-upload.disabled, button:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+/* --- МОДАЛЬНОЕ ОКНО --- */
+#help-btn {
+    position: fixed; top: 20px; left: 20px;
+    background: #333; color: #e0b973; border: 1px solid #555;
+    width: 35px; height: 35px; border-radius: 50%;
+    cursor: pointer; font-size: 1.2em; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+#help-btn:hover { background: #e0b973; color: #1a1a1a; transform: scale(1.1); }
+
+.modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); }
+.modal-content { background-color: #1f1f1f; margin: 5% auto; padding: 30px; border: 1px solid #333; width: 80%; max-width: 700px; border-radius: 12px; color: #f5f5f5; }
+.modal-content h3 { color: #e0b973; border-bottom: 1px solid #444; padding-bottom: 10px; margin-top: 0; }
+.close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+.close-btn:hover { color: #e0b973; }
+hr { border-top: 1px solid #444; margin: 20px 0; }
+
+/* --- АДАПТИВНОСТЬ: МОБИЛЬНЫЙ ВИД (< 750px) --- */
+@media (max-width: 750px) {
+    .panel-right { min-height: 70vh; }
+    #result-area { min-height: 250px; }
+    .panel-left { min-height: auto; max-height: 40vh; overflow-y: auto; }
+    .layout-toggle-btn { display: none; }
+}
     padding: 0;
 }
 
